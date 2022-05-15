@@ -2,6 +2,7 @@
 #include <WiFi.h>
 #include <HTTPClient.h>
 #include <LiquidCrystal_I2C.h>
+#include <DHTesp.h>
 LiquidCrystal_I2C lcd(0x27, 20, 4);
 
 
@@ -9,10 +10,8 @@ LiquidCrystal_I2C lcd(0x27, 20, 4);
 int Gas_digital = 2;
 
 // DHT22
-#include "DHTesp.h"
 const int DHT_PIN = 19;
 DHTesp dht;
-
 
 
 //Rain
@@ -20,14 +19,13 @@ DHTesp dht;
 #define sensorPin 16
 
 
-const char* ssid = "SKYEUQH7";
-const char* password = "LLNFeeQbnqjh";
 
-const int greenled = 14;
-const int redled = 5;
+//Wifi
+const char* ssid = "Redmi_Theekshana";
+const char* password = "1234567th";
 
 
-// Domain name with URL path or IP address with path
+// Domain name with URL path
 String serverName = "http://iot.creatxsoftware.com/api/dataset";
 
 
@@ -37,17 +35,11 @@ void setup() {
   pinMode(Gas_digital, INPUT);
   Serial.begin(9600);
 
-
   //  Display
   lcd.begin(20, 4);
   lcd.init();
   lcd.backlight();
   //  Serial.begin(115200);
-
-  //  LED
-  pinMode(greenled, OUTPUT);
-  pinMode(redled, OUTPUT);
-  digitalWrite(redled, HIGH);
 
 
   // DHT22
@@ -83,37 +75,29 @@ void setup() {
 
 void loop() {
 
-
-
-
-
   //Check WiFi connection status
   if (WiFi.status() == WL_CONNECTED) {
     HTTPClient http;
+    
+    lcd.clear();
 
- lcd.clear();
+    //Gas
+    int gassensorDigital = digitalRead(Gas_digital);
+    Serial.print("Gas Class: ");
+    Serial.print(gassensorDigital);
 
-//Gas
-  int gassensorDigital = digitalRead(Gas_digital);
-  Serial.print("Gas Class: ");
-  Serial.print(gassensorDigital);
 
-  
-  if (gassensorDigital > 0) {
-    lcd.setCursor(0, 2);
-    Serial.println("Gas");
+    if (gassensorDigital > 0) {
+      lcd.setCursor(0, 2);
+      Serial.println("Gas");
       lcd.print("Smoke: Gas Found");
-  }
-  else {
-    lcd.setCursor(0, 2);
-    Serial.println("Gas");
+    }
+    else {
+      lcd.setCursor(0, 2);
+      Serial.println("Gas");
       lcd.print("Smoke: Gas Not Found");
-    Serial.println("No Gas");
-  }
-
-
-
-  
+      Serial.println("No Gas");
+    }
 
 
     // DHT22
@@ -126,7 +110,7 @@ void loop() {
     Serial.print("temprature: ");
     Serial.println(temprature);
 
-   lcd.setCursor(0, 0);
+    lcd.setCursor(0, 0);
     lcd.print("Humidity: ");
     lcd.print(humidity);
     lcd.setCursor(0, 1);
@@ -135,14 +119,11 @@ void loop() {
 
 
 
-
-
     //Rain
     int val = readSensor();
     Serial.print("Digital Output: ");
     Serial.println(val);
 
-    // Determine status of rain
     if (val) {
       lcd.setCursor(0, 3);
       lcd.print("Rain: It's Clear");
@@ -156,22 +137,19 @@ void loop() {
 
     Serial.println(" ");
 
-  
-    String serverPath = serverName + "?rain="+val+"&temprature="+temprature+"&huminity="+humidity+"&gas="+gassensorDigital+"";
 
+    String serverPath = serverName + "?rain=" + val + "&temprature=" + temprature + "&huminity=" + humidity + "&gas=" + gassensorDigital + "";
 
-
-    // Your Domain name with URL path or IP address with path
+    //  Domain name with URL path or IP address with path
     http.begin(serverPath.c_str());
 
     // Send HTTP GET request
     int httpResponseCode = http.GET();
 
+
     if (httpResponseCode > 0) {
       Serial.print("HTTP Response code: ");
       Serial.println(httpResponseCode);
-      //      String payload = http.getString();
-      //      Serial.println(payload);
     }
     else {
       Serial.print("Error code: ");
@@ -182,11 +160,8 @@ void loop() {
   }
   else {
     Serial.println("WiFi Disconnected");
-    digitalWrite(redled, HIGH);
-    digitalWrite(greenled, LOW);
   }
   delay(1000);
-  Serial.println(" Gas");
 
 }
 
